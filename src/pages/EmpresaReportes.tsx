@@ -44,7 +44,7 @@ export const EmpresaReportes = () => {
         if (contratosGuardados) {
             const lista: ContratoEmpresa[] = JSON.parse(contratosGuardados);
             
-            // Filtrar solo los contratos de la empresa en sesión y sincronizar su estado real con Admin
+            
             const deLaEmpresa = lista
                 .filter(c => !c.empresa || c.empresa.toLowerCase() === empresaActiva)
                 .map(c => {

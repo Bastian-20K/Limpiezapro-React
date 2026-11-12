@@ -4,20 +4,20 @@ import { useNavigate } from 'react-router-dom';
 export const Admin = () => {
     const navigate = useNavigate();
     
-    // Estado para guardar la cantidad de usuarios registrados
+    // Estado
     const [totalUsuarios, setTotalUsuarios] = useState(0);
 
-    // Efecto que se ejecuta al cargar la pantalla para leer el localStorage
+    
     useEffect(() => {
         const claves = Object.keys(localStorage);
-        // Filtramos solo las claves que contengan un "@" para saber que son correos registrados
+        // con @
         const correosRegistrados = claves.filter(clave => clave.includes('@'));
         setTotalUsuarios(correosRegistrados.length);
     }, []);
 
-    // Función para cerrar sesión y volver al inicio
+    
     const handleLogout = () => {
-        // Aquí en el futuro puedes borrar el token de sesión actual
+        
         navigate('/');
     };
 

@@ -42,7 +42,7 @@ export const EmpresaPago = () => {
         const contratosGuardados = localStorage.getItem('contratosEmpresa');
         const listaCompleta: ContratoEmpresa[] = contratosGuardados ? JSON.parse(contratosGuardados) : [];
 
-        // 1. Actualizar el contrato en la lista global de localStorage
+        
         const contratosActualizados = listaCompleta.map(contrato => {
             if (contrato.id === contratoId) {
                 const cuotasRealizadas = contrato.cuotasPagadas || 0;
@@ -50,7 +50,7 @@ export const EmpresaPago = () => {
                 const nuevoSaldo = Math.max(0, contrato.saldo - valorCuota);
                 const nuevasCuotasPagadas = cuotasRealizadas + 1;
 
-                // 2. Registrar el pago en Tesorería del Administrador (pagosAdmin)
+                
                 const pagosAdminGuardados = localStorage.getItem('pagosAdmin');
                 const listaPagosAdmin = pagosAdminGuardados ? JSON.parse(pagosAdminGuardados) : [];
 
@@ -74,7 +74,7 @@ export const EmpresaPago = () => {
 
         localStorage.setItem('contratosEmpresa', JSON.stringify(contratosActualizados));
 
-        // 3. Actualizar la vista local filtrada
+        
         setContratosEmpresa(prev => prev.map(c => {
             if (c.id === contratoId) {
                 const cuotasRealizadas = c.cuotasPagadas || 0;

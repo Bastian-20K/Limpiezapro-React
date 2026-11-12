@@ -20,7 +20,7 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Ruta principal que carga la página de Inicio */}
+        {/*Ruta paginas*/}
         <Route path="/" element={<Inicio />} />
         <Route path="/usuario" element={<Usuario />} />
         <Route path="/admin" element={<Admin />} />

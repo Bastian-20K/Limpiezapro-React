@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Estructuras de datos
+
 interface Empleado {
     id: string;
     nombre: string;
@@ -15,24 +15,24 @@ interface Solicitud {
     zona: string;
     estado: 'En proceso de validación' | 'En marcha' | 'Terminada' | 'Rechazada' | 'Cancelada';
     detalles: string[];
-    valor: number; // Necesario para enviarlo a los reportes cuando termine
+    valor: number; 
     empleadosAsignados: string[];
 }
 
 export const AdminGestion = () => {
     const navigate = useNavigate();
 
-    // Estados principales
+    // Estados
     const [solicitudes, setSolicitudes] = useState<Solicitud[]>([]);
     const [empleados, setEmpleados] = useState<Empleado[]>([]);
     
-    // Estados para el Modal
+    // EstadosModal
     const [solicitudSeleccionada, setSolicitudSeleccionada] = useState<Solicitud | null>(null);
     const [estadoEdit, setEstadoEdit] = useState<Solicitud['estado']>('En proceso de validación');
     const [empleadosEdit, setEmpleadosEdit] = useState<string[]>([]);
 
     useEffect(() => {
-        // 1. Cargar Empleados de prueba
+        // empleado prueba
         const empleadosBase: Empleado[] = [
             { id: 'EMP-1', nombre: 'Carlos Ruiz', ocupado: false },
             { id: 'EMP-2', nombre: 'Ana Gómez', ocupado: false },
@@ -41,12 +41,12 @@ export const AdminGestion = () => {
         ];
         setEmpleados(empleadosBase);
 
-        // 2. Cargar Solicitudes
+        //Solicitudes
         const solicitudesGuardadas = localStorage.getItem('solicitudesAdmin');
         if (solicitudesGuardadas) {
             setSolicitudes(JSON.parse(solicitudesGuardadas));
         } else {
-            // DATOS DE PRUEBA: Si está vacío, cargamos estas solicitudes
+            // DATOS DE PRUEBA
             const solicitudesPrueba: Solicitud[] = [
                 { id: 'SOL-101', fecha: '2026-11-10', cliente: 'Juan Pérez', zona: 'Providencia', estado: 'En proceso de validación', detalles: ['Limpieza Profunda', 'Casa 3 Habitaciones'], valor: 45000, empleadosAsignados: [] },
                 { id: 'SOL-102', fecha: '2026-11-11', cliente: 'Empresa Alfa', zona: 'Las Condes', estado: 'En marcha', detalles: ['Mantención Oficina', 'Insumos incluidos'], valor: 120000, empleadosAsignados: ['EMP-1'] }
@@ -56,14 +56,14 @@ export const AdminGestion = () => {
         }
     }, []);
 
-    // Preparar el modal al hacer clic en "Gestionar"
+    
     const abrirModal = (solicitud: Solicitud) => {
         setSolicitudSeleccionada(solicitud);
         setEstadoEdit(solicitud.estado);
         setEmpleadosEdit([...solicitud.empleadosAsignados]);
     };
 
-    // Manejar checkboxes de empleados
+    
     const toggleEmpleado = (empId: string) => {
         if (empleadosEdit.includes(empId)) {
             setEmpleadosEdit(empleadosEdit.filter(id => id !== empId));
@@ -72,12 +72,12 @@ export const AdminGestion = () => {
         }
     };
 
-    // Guardar los cambios del modal
+    
     const guardarCambios = (e: React.FormEvent) => {
         e.preventDefault();
         if (!solicitudSeleccionada) return;
 
-        // 1. Actualizar la lista de solicitudes
+        // 1. Actualizar list solicitudes
         const nuevasSolicitudes = solicitudes.map(sol => 
             sol.id === solicitudSeleccionada.id 
                 ? { ...sol, estado: estadoEdit, empleadosAsignados: empleadosEdit }
@@ -87,13 +87,13 @@ export const AdminGestion = () => {
         setSolicitudes(nuevasSolicitudes);
         localStorage.setItem('solicitudesAdmin', JSON.stringify(nuevasSolicitudes));
 
-        // 2. MAGIA: Si se marca como "Terminada", lo enviamos a los Reportes KPI
+        // terminada manda a reporte
         if (estadoEdit === 'Terminada' && solicitudSeleccionada.estado !== 'Terminada') {
             const historialGuardado = localStorage.getItem('historialServicios');
             const historial = historialGuardado ? JSON.parse(historialGuardado) : [];
             
             historial.push({
-                id: solicitudSeleccionada.id.replace('SOL-', ''), // Quitamos el prefijo para la tabla de reportes
+                id: solicitudSeleccionada.id.replace('SOL-', ''), 
                 fecha: solicitudSeleccionada.fecha,
                 cliente: solicitudSeleccionada.cliente,
                 zona: solicitudSeleccionada.zona,
@@ -104,7 +104,7 @@ export const AdminGestion = () => {
             localStorage.setItem('historialServicios', JSON.stringify(historial));
         }
 
-        // 3. Cerrar el modal limpiamente
+        
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';

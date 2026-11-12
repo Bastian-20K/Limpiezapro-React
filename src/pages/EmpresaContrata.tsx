@@ -18,7 +18,7 @@ const PRECIO_POR_M2 = 1500;
 export const EmpresaContrata = () => {
     const navigate = useNavigate();
 
-    // Estados del formulario
+    // Estados 
     const [zonas, setZonas] = useState<Zona[]>([]);
     const [zonaSeleccionada, setZonaSeleccionada] = useState('');
     const [espacios, setEspacios] = useState<EspacioCorporativo[]>([
@@ -27,7 +27,7 @@ export const EmpresaContrata = () => {
     const [metodoPago, setMetodoPago] = useState<'Total' | 'Pie y Cuotas'>('Total');
     const [cuotas, setCuotas] = useState('3');
 
-    // Cargar Zonas desde localStorage
+    // localstorage zonas
     useEffect(() => {
         const zonasGuardadas = localStorage.getItem('zonasAdmin');
         if (zonasGuardadas) {
@@ -41,7 +41,7 @@ export const EmpresaContrata = () => {
         }
     }, []);
 
-    // Agregar nuevo espacio corporativo
+    
     const handleAgregarEspacio = () => {
         setEspacios(prev => [
             ...prev,
@@ -49,7 +49,7 @@ export const EmpresaContrata = () => {
         ]);
     };
 
-    // Eliminar espacio corporativo
+    
     const handleEliminarEspacio = (id: string) => {
         if (espacios.length === 1) {
             alert('Debes mantener al menos un espacio configurado.');
@@ -58,7 +58,7 @@ export const EmpresaContrata = () => {
         setEspacios(prev => prev.filter(esp => esp.id !== id));
     };
 
-    // Actualizar campos de un espacio
+    
     const handleActualizarEspacio = (id: string, campo: keyof EspacioCorporativo, valor: string | number) => {
         setEspacios(prev => prev.map(esp => {
             if (esp.id === id) {
@@ -68,13 +68,13 @@ export const EmpresaContrata = () => {
         }));
     };
 
-    // Cálculos totales
+    // calcula
     const totalMetros = espacios.reduce((acc, esp) => acc + (Number(esp.metros) || 0), 0);
     const totalPrecio = totalMetros * PRECIO_POR_M2;
     const valorPie = Math.round(totalPrecio * 0.3);
     const valorSaldo = totalPrecio - valorPie;
 
-    // Enviar solicitud corporativa
+    
     const handleConfirmarContrato = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -91,7 +91,7 @@ export const EmpresaContrata = () => {
             esp => `${esp.nombre || 'Área Corporativa'}: ${esp.metros} m² ${esp.observaciones ? `(${esp.observaciones})` : ''}`
         );
 
-        // 1. Guardar en SOLICITUDES ADMIN (Para AdminGestion)
+        
         const solicitudesGuardadas = localStorage.getItem('solicitudesAdmin');
         const listaSolicitudes = solicitudesGuardadas ? JSON.parse(solicitudesGuardadas) : [];
         
@@ -107,7 +107,7 @@ export const EmpresaContrata = () => {
         });
         localStorage.setItem('solicitudesAdmin', JSON.stringify(listaSolicitudes));
 
-        // 2. Guardar en PAGOS ADMIN (Para AdminAutoriza)
+        
         const pagosGuardados = localStorage.getItem('pagosAdmin');
         const listaPagos = pagosGuardados ? JSON.parse(pagosGuardados) : [];
 
@@ -122,7 +122,7 @@ export const EmpresaContrata = () => {
         });
         localStorage.setItem('pagosAdmin', JSON.stringify(listaPagos));
 
-        // 3. Guardar en CONTRATOS EMPRESA (Para EmpresaEstado, EmpresaPago y EmpresaReportes)
+        
         const contratosEmpresaGuardados = localStorage.getItem('contratosEmpresa');
         const listaContratosEmp = contratosEmpresaGuardados ? JSON.parse(contratosEmpresaGuardados) : [];
 
@@ -143,7 +143,7 @@ export const EmpresaContrata = () => {
         });
         localStorage.setItem('contratosEmpresa', JSON.stringify(listaContratosEmp));
 
-        // Mostrar Modal de Éxito
+        
         const modalElement = document.getElementById('modalExito');
         if (modalElement) {
             modalElement.classList.add('show');

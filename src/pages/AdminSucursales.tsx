@@ -21,11 +21,11 @@ interface Empleado {
 export const AdminSucursales = () => {
     const navigate = useNavigate();
 
-    // Estados para Zonas
+    // Estados
     const [zonas, setZonas] = useState<Zona[]>([]);
     const [nombreZona, setNombreZona] = useState('');
 
-    // Estados para Empleados
+    // Estados Empleados
     const [empleados, setEmpleados] = useState<Empleado[]>([]);
     const [empIdEdit, setEmpIdEdit] = useState<string | null>(null);
     const [rut, setRut] = useState('');
@@ -36,9 +36,9 @@ export const AdminSucursales = () => {
     const [experiencia, setExperiencia] = useState('');
     const [especialidad, setEspecialidad] = useState('');
 
-    // Cargar datos al iniciar
+    
     useEffect(() => {
-        // 1. Cargar Zonas
+        
         const zonasGuardadas = localStorage.getItem('zonasAdmin');
         if (zonasGuardadas) {
             setZonas(JSON.parse(zonasGuardadas));
@@ -52,7 +52,7 @@ export const AdminSucursales = () => {
             localStorage.setItem('zonasAdmin', JSON.stringify(zonasBase));
         }
 
-        // 2. Cargar Empleados
+        
         const empleadosGuardados = localStorage.getItem('empleadosAdmin');
         if (empleadosGuardados) {
             const lista: Empleado[] = JSON.parse(empleadosGuardados);
@@ -69,13 +69,13 @@ export const AdminSucursales = () => {
         }
     }, []);
 
-    // Actualizar el KPI global para AdminReporte
+    
     const actualizarKpiPersonal = (lista: Empleado[]) => {
         const activos = lista.filter(e => e.activo).length;
         localStorage.setItem('empleadosActivos', activos.toString());
     };
 
-    // --- LÓGICA DE ZONAS ---
+    //zonas 
     const handleAgregarZona = (e: React.FormEvent) => {
         e.preventDefault();
         if (nombreZona.trim() === '') return;
@@ -99,12 +99,12 @@ export const AdminSucursales = () => {
         }
     };
 
-    // --- LÓGICA DE EMPLEADOS ---
+    //empleados
     const handleGuardarEmpleado = (e: React.FormEvent) => {
         e.preventDefault();
 
         if (empIdEdit) {
-            // Edición
+            
             const empleadosActualizados = empleados.map(emp => 
                 emp.id === empIdEdit 
                     ? {
@@ -124,7 +124,7 @@ export const AdminSucursales = () => {
             actualizarKpiPersonal(empleadosActualizados);
             setEmpIdEdit(null);
         } else {
-            // Creación
+            
             const nuevoEmpleado: Empleado = {
                 id: `EMP-${Date.now()}`,
                 rut,
@@ -142,7 +142,7 @@ export const AdminSucursales = () => {
             actualizarKpiPersonal(empleadosActualizados);
         }
 
-        // Limpiar formulario
+        
         limpiarFormularioEmp();
     };
 

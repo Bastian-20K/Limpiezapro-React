@@ -6,7 +6,7 @@ export const Usuario = () => {
     const [nombreCliente, setNombreCliente] = useState('Cliente');
 
     useEffect(() => {
-        // Si guardaste el correo o sesión activa, lo mostramos en el saludo
+        // correo persona arria
         const sesionActual = localStorage.getItem('usuarioActivo');
         if (sesionActual) {
             setNombreCliente(sesionActual);

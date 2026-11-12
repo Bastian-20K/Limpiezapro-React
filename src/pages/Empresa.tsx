@@ -6,7 +6,7 @@ export const Empresa = () => {
     const [nombreEmpresa, setNombreEmpresa] = useState('Empresa');
 
     useEffect(() => {
-        // Recuperar el nombre o correo de la empresa autenticada en sesión
+        
         const sesionActual = localStorage.getItem('empresaActiva') || localStorage.getItem('usuarioActivo');
         if (sesionActual) {
             setNombreEmpresa(sesionActual);

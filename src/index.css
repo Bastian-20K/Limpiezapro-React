@@ -1,7 +1,7 @@
 /* ===== VARIABLES DE COLORES ===== */
 :root {
     --color-cian: #00bcd4;
-    --color-verde: #2e7d32; /* Un verde más elegante */
+    --color-verde: #2e7d32; 
     --color-azul-claro: #03a9f4;
     --color-verde-claro: #e8f5e9;
     --color-cian-claro: #e0f7fa;
@@ -91,7 +91,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-height: 140px; /* Misma altura para todas las tarjetas */
+    min-height: 140px; 
 }
 
 .sponsor-card:hover {
@@ -100,9 +100,9 @@
 }
 
 .sponsor-logo {
-    height: 110px; /* Tamaño único e igual para todos los logos */
+    height: 110px; 
     width: 100%;
-    object-fit: contain; /* Evita que el logo se deforme */
+    object-fit: contain; 
     filter: grayscale(20%);
     transition: filter 0.3s ease;
 }

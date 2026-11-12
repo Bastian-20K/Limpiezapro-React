@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 export const Inicio = () => {
+    //estao
     const navigate = useNavigate();
 
     const [correo, setCorreo] = useState('');
@@ -9,7 +10,7 @@ export const Inicio = () => {
     const [correoEmpresa, setCorreoEmpresa] = useState('');
     const [passwordEmpresa, setPasswordEmpresa] = useState('');
 
-    // Estados para el Registro
+    
     const [nombreReg, setNombreReg] = useState('');
     const [correoReg, setCorreoReg] = useState('');
     const [passwordReg, setPasswordReg] = useState('');
@@ -20,67 +21,67 @@ export const Inicio = () => {
     const correoNormalizado = correo.trim().toLowerCase();
 
     if (!correoNormalizado.includes('@') || password.trim() === '') {
-      alert('Por favor, ingresa un correo válido y tu contraseña.');
-      return;
+        alert('Por favor, ingresa un correo válido y tu contraseña.');
+        return;
     }
 
-    // 1. VERIFICAR EN LOCALSTORAGE
-    // Buscamos si existe una contraseña guardada para este correo
+    
+    // localstorage
     const passwordGuardada = localStorage.getItem(correoNormalizado);
 
-    // Si no hay nada guardado, o la contraseña no coincide, bloqueamos el paso
+    
     if (!passwordGuardada || passwordGuardada !== password) {
-      alert('Error: Correo no registrado o contraseña incorrecta.');
-      return;
+        alert('Error: Correo no registrado o contraseña incorrecta.');
+        return;
     }
 
-    // 2. Limpieza forzada del Modal
+    // modal
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
     document.body.style.paddingRight = '';
     const backdrops = document.querySelectorAll('.modal-backdrop');
     backdrops.forEach(backdrop => backdrop.remove());
 
-    // 3. Redirección
+    // pag red
     if (correoNormalizado.includes('admin')) {
-      navigate('/admin');
+        navigate('/admin');
     } else if (correoNormalizado.includes('empresa')) {
-      localStorage.setItem('empresaActiva', correoNormalizado);
-      navigate('/empresa');
+        localStorage.setItem('empresaActiva', correoNormalizado);
+        navigate('/empresa');
     } else {
-      localStorage.setItem('usuarioActivo', correoNormalizado);
-      navigate('/usuario');
+        localStorage.setItem('usuarioActivo', correoNormalizado);
+        navigate('/usuario');
     }
   };
 
     const handleLoginEmpresa = (e: React.FormEvent) => {
-        e.preventDefault(); // Evita que la página recargue
+        e.preventDefault(); 
 
         const correoNormalizado = correoEmpresa.trim().toLowerCase();
 
-        // 1. Validación rápida
+        // Validación 
         if (!correoNormalizado.includes('@') || passwordEmpresa.trim() === '') {
             alert('Por favor, ingresa un correo válido y tu contraseña corporativa.');
             return;
         }
 
-        // 2. VERIFICAR EN LOCALSTORAGE (Aquí está la magia que faltaba)
+        //VERIFICAR EN LOCALSTORAGE
         const passwordGuardada = localStorage.getItem(correoNormalizado);
 
-        // Si no hay nada guardado, o la contraseña no coincide, bloqueamos el paso
+        
         if (!passwordGuardada || passwordGuardada !== passwordEmpresa) {
             alert('Error: Correo corporativo no registrado o contraseña incorrecta.');
             return;
         }
 
-        // 3. Limpiamos el bloqueo visual de Bootstrap
+        
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
         const backdrops = document.querySelectorAll('.modal-backdrop');
         backdrops.forEach(backdrop => backdrop.remove());
 
-        // 4. Redirigimos directamente al panel de la empresa
+        
         localStorage.setItem('empresaActiva', correoNormalizado); 
         navigate('/empresa');
     };
@@ -90,32 +91,32 @@ export const Inicio = () => {
 
     const correoNormalizado = correoReg.trim().toLowerCase();
 
-    // 1. Validación de campos
+    // 
     if (nombreReg.trim() === '' || !correoNormalizado.includes('@') || passwordReg.trim() === '') {
       alert('Por favor, completa todos los campos correctamente para registrarte.');
       return;
     }
 
-    // 2. GUARDAR EN LOCALSTORAGE (Nuestra base de datos temporal)
-    // Usamos el correo como "llave" y la contraseña como "valor"
+    
+    
     localStorage.setItem(correoNormalizado, passwordReg);
 
-    // 3. Mensaje de éxito
+    
     alert('¡Registro exitoso! Ya puedes iniciar sesión con tu nueva cuenta.');
 
-    // 4. Limpiamos los campos
+    
     setNombreReg('');
     setCorreoReg('');
     setPasswordReg('');
 
-    // 5. Cerramos el modal
+    
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
     document.body.style.paddingRight = '';
     const backdrops = document.querySelectorAll('.modal-backdrop');
     backdrops.forEach(backdrop => backdrop.remove());
     
-    // 5. Cerramos AMBOS modales por seguridad (el de Personas y el de Empresas)
+    
     const modalGeneral = document.getElementById('modalAccesoGeneral');
     const modalEmpresa = document.getElementById('modalEmpresa');
     

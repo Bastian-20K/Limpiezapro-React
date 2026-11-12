@@ -25,7 +25,7 @@ export const UsuarioPago = () => {
 
         if (contratosGuardados) {
             const lista: Contrato[] = JSON.parse(contratosGuardados);
-            // Filtrar únicamente los contratos que pertenecen al cliente activo
+            
             const contratosDelUsuario = lista
                 .filter(c => !c.cliente || c.cliente.toLowerCase() === clienteActivo)
                 .map(c => ({
@@ -42,7 +42,7 @@ export const UsuarioPago = () => {
         const contratosGuardados = localStorage.getItem('misContratos');
         const listaCompleta: Contrato[] = contratosGuardados ? JSON.parse(contratosGuardados) : [];
 
-        // 1. Actualizar el contrato específico en la lista global de localStorage
+        // Actualizar contrato localStorage
         const contratosActualizados = listaCompleta.map(contrato => {
             if (contrato.id === contratoId) {
                 const cuotasRealizadas = contrato.cuotasPagadas || 0;
@@ -50,7 +50,7 @@ export const UsuarioPago = () => {
                 const nuevoSaldo = Math.max(0, contrato.saldo - valorCuota);
                 const nuevasCuotasPagadas = cuotasRealizadas + 1;
 
-                // 2. Registrar el abono en Tesorería del Administrador (pagosAdmin)
+                //  PAGOADMIN del Administrador 
                 const pagosAdminGuardados = localStorage.getItem('pagosAdmin');
                 const listaPagosAdmin = pagosAdminGuardados ? JSON.parse(pagosAdminGuardados) : [];
                 
@@ -74,7 +74,7 @@ export const UsuarioPago = () => {
 
         localStorage.setItem('misContratos', JSON.stringify(contratosActualizados));
 
-        // 3. Actualizar la vista local filtrada
+        
         setMisContratos(prev => prev.map(c => {
             if (c.id === contratoId) {
                 const cuotasRealizadas = c.cuotasPagadas || 0;

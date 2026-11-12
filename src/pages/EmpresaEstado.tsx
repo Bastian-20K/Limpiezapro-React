@@ -22,7 +22,7 @@ export const EmpresaEstado = () => {
 
         if (solicitudesGuardadas) {
             const todas: Solicitud[] = JSON.parse(solicitudesGuardadas);
-            // Filtrar solo las solicitudes correspondientes a la empresa en sesión
+            
             const deLaEmpresa = todas.filter(sol => sol.cliente.toLowerCase() === empresaActiva);
             setSolicitudesEmpresa(deLaEmpresa);
         }

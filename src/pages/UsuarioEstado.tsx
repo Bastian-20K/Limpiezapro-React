@@ -22,7 +22,7 @@ export const UsuarioEstado = () => {
 
         if (solicitudesGuardadas) {
             const todas: Solicitud[] = JSON.parse(solicitudesGuardadas);
-            // Filtrar solo las solicitudes del usuario en sesión
+            
             const delUsuario = todas.filter(sol => sol.cliente.toLowerCase() === clienteActivo.toLowerCase());
             setMisSolicitudes(delUsuario);
         }

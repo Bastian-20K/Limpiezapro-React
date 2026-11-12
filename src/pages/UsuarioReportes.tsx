@@ -26,7 +26,7 @@ export const UsuarioReportes = () => {
 
         if (contratosGuardados) {
             const lista: Contrato[] = JSON.parse(contratosGuardados);
-            // Filtrar únicamente los servicios contratados por el usuario activo en sesión
+            
             const reportesDelUsuario = lista.filter(c => !c.cliente || c.cliente.toLowerCase() === clienteActivo);
             setMisReportes(reportesDelUsuario);
         }
@@ -52,7 +52,7 @@ export const UsuarioReportes = () => {
                 </div>
             </nav>
 
-            {/* CONTENIDO PRINCIPAL */}
+            {/*  PRINCIPAL */}
             <div className="container py-5">
                 <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
                     <h2 className="color-cian fw-bold mb-0">

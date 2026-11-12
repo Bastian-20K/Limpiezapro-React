@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Definimos la estructura de cómo se verá un reporte de servicio
+
 interface ServicioTerminado {
     id: string;
     fecha: string;
@@ -14,29 +14,29 @@ interface ServicioTerminado {
 export const AdminReporte = () => {
     const navigate = useNavigate();
 
-    // Estados para la fecha, los KPIs y la lista de la tabla
+    // Estados
     const [fechaActual, setFechaActual] = useState('');
     const [reportes, setReportes] = useState<ServicioTerminado[]>([]);
     const [kpiIngresos, setKpiIngresos] = useState(0);
     const [kpiEmpleados, setKpiEmpleados] = useState(0);
 
     useEffect(() => {
-        // 1. Mostrar la fecha de hoy automáticamente
+        // fecha
         const hoy = new Date();
         setFechaActual(hoy.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' }));
 
-        // 2. Leer los servicios terminados (Esto será llenado luego por los usuarios)
+        
         const historialGuardado = localStorage.getItem('historialServicios');
         
         if (historialGuardado) {
             const historialParseado: ServicioTerminado[] = JSON.parse(historialGuardado);
             setReportes(historialParseado);
 
-            // Calcular ingresos sumando el valor de todos los servicios
+            // Calcular areas
             const totalIngresos = historialParseado.reduce((acumulador, item) => acumulador + item.valor, 0);
             setKpiIngresos(totalIngresos);
         } else {
-            // DATO DE PRUEBA: Si no hay nada, inyectamos uno de ejemplo para ver cómo luce
+            // DATO DE PRUEBA
             const datosPrueba = [
                 { id: '1001', fecha: '2026-11-10', cliente: 'Juan Pérez', zona: 'Providencia', servicio: 'Limpieza Profunda', valor: 45000 },
                 { id: '1002', fecha: '2026-11-11', cliente: 'Empresa Alfa', zona: 'Las Condes', servicio: 'Mantención Oficina', valor: 120000 }
@@ -45,9 +45,9 @@ export const AdminReporte = () => {
             setKpiIngresos(165000);
         }
 
-        // 3. Simular empleados activos (o leerlos si tuvieras un módulo de RRHH)
+        
         const empleadosGuardados = localStorage.getItem('empleadosActivos');
-        setKpiEmpleados(empleadosGuardados ? parseInt(empleadosGuardados) : 15); // 15 por defecto
+        setKpiEmpleados(empleadosGuardados ? parseInt(empleadosGuardados) : 15); 
     }, []);
 
     return (

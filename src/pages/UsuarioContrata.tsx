@@ -21,7 +21,7 @@ const PRECIOS_AREAS: AreaPrecios = {
 export const UsuarioContrata = () => {
     const navigate = useNavigate();
 
-    // Estados del formulario
+    // Estados 
     const [zonas, setZonas] = useState<Zona[]>([]);
     const [zonaSeleccionada, setZonaSeleccionada] = useState('');
     const [tipoServicio, setTipoServicio] = useState('Casa');
@@ -36,7 +36,7 @@ export const UsuarioContrata = () => {
     const [metodoPago, setMetodoPago] = useState<'Total' | 'Pie y Cuotas'>('Total');
     const [cuotas, setCuotas] = useState('3');
 
-    // Cargar Zonas desde localStorage
+    // Zonas localStorage
     useEffect(() => {
         const zonasGuardadas = localStorage.getItem('zonasAdmin');
         if (zonasGuardadas) {
@@ -50,7 +50,7 @@ export const UsuarioContrata = () => {
         }
     }, []);
 
-    // Manejo de cantidades de áreas
+    
     const handleCantidadChange = (area: string, valor: number) => {
         setCantidades(prev => ({
             ...prev,
@@ -58,7 +58,7 @@ export const UsuarioContrata = () => {
         }));
     };
 
-    // Cálculos económicos
+    // calcula
     const totalPrecio = Object.keys(cantidades).reduce((total, area) => {
         return total + (cantidades[area] * PRECIOS_AREAS[area]);
     }, 0);
@@ -66,7 +66,7 @@ export const UsuarioContrata = () => {
     const valorPie = Math.round(totalPrecio * 0.3);
     const valorSaldo = totalPrecio - valorPie;
 
-    // Procesar envío del contrato
+    
     const handleConfirmarServicio = (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -79,12 +79,12 @@ export const UsuarioContrata = () => {
         const idSolicitud = `SOL-${Math.floor(100 + Math.random() * 900)}`;
         const fechaHoy = new Date().toISOString().split('T')[0];
 
-        // Construir detalle de áreas seleccionadas
+        
         const detallesArray = Object.keys(cantidades)
             .filter(area => cantidades[area] > 0)
             .map(area => `${cantidades[area]}x ${area}`);
 
-        // 1. Guardar en SOLICITUDES (Para AdminGestion)
+        
         const solicitudesGuardadas = localStorage.getItem('solicitudesAdmin');
         const listaSolicitudes = solicitudesGuardadas ? JSON.parse(solicitudesGuardadas) : [];
         
@@ -100,7 +100,7 @@ export const UsuarioContrata = () => {
         });
         localStorage.setItem('solicitudesAdmin', JSON.stringify(listaSolicitudes));
 
-        // 2. Guardar en PAGOS (Para AdminAutoriza)
+        
         const pagosGuardados = localStorage.getItem('pagosAdmin');
         const listaPagos = pagosGuardados ? JSON.parse(pagosGuardados) : [];
 
@@ -115,7 +115,7 @@ export const UsuarioContrata = () => {
         });
         localStorage.setItem('pagosAdmin', JSON.stringify(listaPagos));
 
-        // 3. Guardar en CONTRATOS PERSONALES (Para UsuarioReportes y UsuarioPagos)
+        
         const contratosGuardados = localStorage.getItem('misContratos');
         const listaContratos = contratosGuardados ? JSON.parse(contratosGuardados) : [];
 
@@ -134,7 +134,7 @@ export const UsuarioContrata = () => {
         });
         localStorage.setItem('misContratos', JSON.stringify(listaContratos));
 
-        // Mostrar Modal de Éxito de Bootstrap
+        
         const modalElement = document.getElementById('modalExito');
         if (modalElement) {
             modalElement.classList.add('show');
@@ -187,7 +187,7 @@ export const UsuarioContrata = () => {
                         </select>
                     </div>
                     
-                    {/* PASO 1: TIPO DE PROPIEDAD */}
+                    {/* TIPO DE PROPIEDAD */}
                     <div className="card shadow-sm mb-4 border-0">
                         <div className="card-header card-header-custom fw-bold">1. Tipo de Propiedad / Servicio</div>
                         <div className="card-body">
@@ -205,7 +205,7 @@ export const UsuarioContrata = () => {
                         </div>
                     </div>
 
-                    {/* PASO 2: ÁREAS A LIMPIAR */}
+                    {/*  AREAS A LIMPIAR */}
                     <div className="card shadow-sm mb-4 border-0">
                         <div className="card-header card-header-custom fw-bold">2. Seleccionar Áreas a Limpiar</div>
                         <div className="card-body">
@@ -238,7 +238,7 @@ export const UsuarioContrata = () => {
                         </div>
                     </div>
 
-                    {/* PASO 3: DETALLES Y FOTOS */}
+                    {/*  DETALLES Y FOTOS */}
                     <div className="card shadow-sm mb-4 border-0">
                         <div className="card-header card-header-custom fw-bold">3. Detalles y Fotografías</div>
                         <div className="card-body">
@@ -260,7 +260,7 @@ export const UsuarioContrata = () => {
                         </div>
                     </div>
 
-                    {/* PASO 4: RESUMEN Y PAGO */}
+                    {/*  RESUMEN Y PAGO */}
                     <div className="card shadow-sm mb-4 border-0">
                         <div className="card-header bg-cian-claro color-cian fw-bold">4. Resumen y Pago</div>
                         <div className="card-body">
@@ -281,7 +281,7 @@ export const UsuarioContrata = () => {
                                 </h4>
                             </div>
 
-                            {/* MÉTODO DE PAGO */}
+                            {/* METODO DE PAGO */}
                             <h5 className="fw-bold color-verde mb-3">Método de Pago</h5>
                             <div className="form-check mb-2">
                                 <input 
@@ -306,7 +306,7 @@ export const UsuarioContrata = () => {
                                 <label className="form-check-label fw-bold" htmlFor="pagoCuotas">Pago con Pie Inicial (30%) y Mensualidades</label>
                             </div>
 
-                            {/* CAJA DE CUOTAS DINÁMICA */}
+                            {/* CAJA DE CUOTAS DINAMICA */}
                             {metodoPago === 'Pie y Cuotas' && (
                                 <div className="mb-4 p-3 bg-white border border-success rounded shadow-sm">
                                     <p className="mb-2"><strong>Pie a pagar hoy (30%):</strong> <span className="text-success fw-bold">{valorPie.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span></p>
@@ -328,7 +328,7 @@ export const UsuarioContrata = () => {
                 </form>
             </div>
 
-            {/* MODAL DE ÉXITO */}
+            {/* MODAL DE EXITO */}
             <div className="modal fade" id="modalExito" tabIndex={-1} aria-hidden="true">
                 <div className="modal-dialog modal-dialog-centered">
                     <div className="modal-content text-center p-4">

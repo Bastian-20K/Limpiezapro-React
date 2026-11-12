@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Definimos la estructura de un Pago
+
 interface Pago {
     id: string;
     cliente: string;
@@ -19,17 +19,17 @@ export const AdminAutoriza = () => {
     const [pagos, setPagos] = useState<Pago[]>([]);
     const [filtro, setFiltro] = useState('Todos');
     
-    // Estados para los modales
+    // Estados modales
     const [pagoSeleccionado, setPagoSeleccionado] = useState<Pago | null>(null);
     const [motivoReembolso, setMotivoReembolso] = useState('');
 
-    // Cargar datos al iniciar
+    
     useEffect(() => {
         const pagosGuardados = localStorage.getItem('pagosAdmin');
         if (pagosGuardados) {
             setPagos(JSON.parse(pagosGuardados));
         } else {
-            // DATOS DE PRUEBA: Si no hay pagos, cargamos estos para probar
+            // DATOS DE PRUEBA
             const pagosPrueba: Pago[] = [
                 { id: 'PAY-001', cliente: 'Juan Pérez', monto: 45000, metodo: 'Transferencia', estado: 'Pendiente' },
                 { id: 'PAY-002', cliente: 'Empresa Alfa', monto: 120000, metodo: 'Tarjeta de Crédito', estado: 'Pagado' },
@@ -40,13 +40,13 @@ export const AdminAutoriza = () => {
         }
     }, []);
 
-    // Función para guardar los cambios en localStorage cada vez que actualizamos el estado
+    //guardar pago
     const actualizarPagos = (nuevosPagos: Pago[]) => {
         setPagos(nuevosPagos);
         localStorage.setItem('pagosAdmin', JSON.stringify(nuevosPagos));
     };
 
-    // Función para pasar un pago de "Pendiente" a "Pagado"
+    // pendiente a pagado
     const handleAutorizar = (id: string) => {
         if (window.confirm('¿Confirmas que se recibió el dinero de esta solicitud?')) {
             const nuevosPagos = pagos.map(pago => 
@@ -56,7 +56,7 @@ export const AdminAutoriza = () => {
         }
     };
 
-    // Función para procesar el reembolso en el formulario del Modal
+    // reembolso modal
     const procesarReembolso = (e: React.FormEvent) => {
         e.preventDefault();
         if (!pagoSeleccionado || motivoReembolso.trim() === '') return;
@@ -71,7 +71,7 @@ export const AdminAutoriza = () => {
         actualizarPagos(nuevosPagos);
         setMotivoReembolso('');
         
-        // Cerrar modal forzadamente
+        
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
@@ -83,7 +83,7 @@ export const AdminAutoriza = () => {
         }
     };
 
-    // Filtrado dinámico para la tabla
+    
     const pagosFiltrados = pagos.filter(pago => 
         filtro === 'Todos' ? true : pago.estado === filtro
     );
