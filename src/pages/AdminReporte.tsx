@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import axios from 'axios';
 
 interface ServicioTerminado {
     id: string;
@@ -14,45 +14,58 @@ interface ServicioTerminado {
 export const AdminReporte = () => {
     const navigate = useNavigate();
 
-    // Estados
     const [fechaActual, setFechaActual] = useState('');
     const [reportes, setReportes] = useState<ServicioTerminado[]>([]);
     const [kpiIngresos, setKpiIngresos] = useState(0);
     const [kpiEmpleados, setKpiEmpleados] = useState(0);
 
+    const cargarHistorial = async () => {
+        try {
+            const response = await axios.get('http://localhost:8085/api/v1/solicitudes');
+            
+            const solicitudesCompletadas = response.data.filter((sol: any) => 
+                sol.estado === 'Terminada' || sol.estado === 'Pagado'
+            );
+
+            const historialBackend = solicitudesCompletadas.map((sol: any) => ({
+                id: sol.id.toString(),
+                fecha: sol.fechaCreacion ? new Date(sol.fechaCreacion).toLocaleDateString('es-CL') : 'Sin fecha',
+                cliente: sol.cliente || 'Cliente Particular',
+                zona: sol.zona || 'Sin zona',
+                servicio: sol.detallesAreas ? sol.detallesAreas.map((d: any) => `${d.nombreArea} (x${d.cantidad})`).join(' + ') : 'Servicio General',
+                valor: sol.montoTotal || 0
+            }));
+
+            setReportes(historialBackend);
+
+            const totalIngresos = historialBackend.reduce((acumulador: number, item: ServicioTerminado) => acumulador + item.valor, 0);
+            setKpiIngresos(totalIngresos);
+
+        } catch (error) {
+            console.error("Error al cargar el historial desde la BD", error);
+        }
+    };
+
+    const cargarEmpleadosActivos = async () => {
+        try {
+            const res = await axios.get('http://localhost:8085/api/v1/empleados');
+            const activos = res.data.filter((e: any) => e.estado !== 'INACTIVO').length;
+            setKpiEmpleados(activos);
+        } catch (error) {
+            console.error("Error al cargar empleados activos:", error);
+        }
+    };
+
     useEffect(() => {
-        // fecha
         const hoy = new Date();
         setFechaActual(hoy.toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric' }));
 
-        
-        const historialGuardado = localStorage.getItem('historialServicios');
-        
-        if (historialGuardado) {
-            const historialParseado: ServicioTerminado[] = JSON.parse(historialGuardado);
-            setReportes(historialParseado);
-
-            // Calcular areas
-            const totalIngresos = historialParseado.reduce((acumulador, item) => acumulador + item.valor, 0);
-            setKpiIngresos(totalIngresos);
-        } else {
-            // DATO DE PRUEBA
-            const datosPrueba = [
-                { id: '1001', fecha: '2026-11-10', cliente: 'Juan Pérez', zona: 'Providencia', servicio: 'Limpieza Profunda', valor: 45000 },
-                { id: '1002', fecha: '2026-11-11', cliente: 'Empresa Alfa', zona: 'Las Condes', servicio: 'Mantención Oficina', valor: 120000 }
-            ];
-            setReportes(datosPrueba);
-            setKpiIngresos(165000);
-        }
-
-        
-        const empleadosGuardados = localStorage.getItem('empleadosActivos');
-        setKpiEmpleados(empleadosGuardados ? parseInt(empleadosGuardados) : 15); 
+        cargarHistorial();
+        cargarEmpleadosActivos();
     }, []);
 
     return (
         <div className="bg-light min-vh-100">
-            {/* NAV BAR */}
             <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm no-print">
                 <div className="container">
                     <span className="navbar-brand fw-bold text-white" style={{ cursor: 'pointer' }} onClick={() => navigate('/admin')}>
@@ -74,7 +87,6 @@ export const AdminReporte = () => {
             </nav>
 
             <div className="container py-4">
-                {/* CABECERA */}
                 <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
                     <div>
                         <h2 className="fw-bold text-primary mb-0"><i className="fa-solid fa-chart-pie me-2"></i>Reporte General de Operaciones</h2>
@@ -85,14 +97,12 @@ export const AdminReporte = () => {
                     </button>
                 </div>
 
-                {/* TARJETAS KPI */}
                 <div className="row g-4 mb-4">
                     <div className="col-md-4">
                         <div className="card shadow-sm border-0 bg-primary text-white h-100">
                             <div className="card-body text-center py-4">
                                 <i className="fa-solid fa-sack-dollar fa-3x mb-3 opacity-75"></i>
                                 <h6 className="text-uppercase fw-bold opacity-75">Ingresos Totales Netos</h6>
-                                {/* Formateador de moneda */}
                                 <h2 className="fw-bold mb-0">
                                     {kpiIngresos.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                 </h2>
@@ -119,7 +129,6 @@ export const AdminReporte = () => {
                     </div>
                 </div>
 
-                {/* TABLA DE HISTORIAL */}
                 <div className="card shadow-sm border-0">
                     <div className="card-header bg-white border-bottom py-3">
                         <h5 className="fw-bold text-secondary mb-0">Historial de Servicios Terminados</h5>
@@ -138,7 +147,6 @@ export const AdminReporte = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {/* Iteramos sobre el estado de reportes para generar filas automáticamente */}
                                     {reportes.length > 0 ? (
                                         reportes.map((reporte, index) => (
                                             <tr key={index}>

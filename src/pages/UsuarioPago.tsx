@@ -1,94 +1,82 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiOperacion } from '../services/api';
 
-interface Contrato {
-    id: string;
-    fecha: string;
-    cliente?: string;
+interface SolicitudPago {
+    id: number;
+    cliente: string;
     tipoServicio: string;
     zona: string;
-    total: number;
-    metodoPago: 'Total' | 'Pie y Cuotas';
-    cuotas: number;
+    montoTotal: number;
+    metodoPago: string;
+    cuotasSeleccionadas: number;
     piePagado: number;
-    saldo: number;
-    cuotasPagadas?: number;
+    fechaCreacion: string;
 }
 
 export const UsuarioPago = () => {
     const navigate = useNavigate();
-    const [misContratos, setMisContratos] = useState<Contrato[]>([]);
+    const [misContratos, setMisContratos] = useState<SolicitudPago[]>([]);
+    const [cuotasPagadasMap, setCuotasPagadasMap] = useState<{ [id: number]: number }>({});
 
     useEffect(() => {
-        const clienteActivo = (localStorage.getItem('usuarioActivo') || '').toLowerCase();
-        const contratosGuardados = localStorage.getItem('misContratos');
+        const cargarContratos = async () => {
+            try {
+                const clienteActivo = (localStorage.getItem('usuarioActivo') || '').toLowerCase();
+                const response = await apiOperacion.get('/solicitudes');
+                const lista: SolicitudPago[] = response.data;
 
-        if (contratosGuardados) {
-            const lista: Contrato[] = JSON.parse(contratosGuardados);
-            
-            const contratosDelUsuario = lista
-                .filter(c => !c.cliente || c.cliente.toLowerCase() === clienteActivo)
-                .map(c => ({
-                    ...c,
-                    cuotasPagadas: c.cuotasPagadas !== undefined ? c.cuotasPagadas : 0
-                }));
+                const contratosDelUsuario = clienteActivo
+                    ? lista.filter(c => c.cliente && c.cliente.toLowerCase() === clienteActivo)
+                    : lista;
 
-            setMisContratos(contratosDelUsuario);
-        }
+                setMisContratos(contratosDelUsuario);
+
+                // Recuperar progreso local de cuotas pagadas por ID de solicitud
+                const progresoGuardado = localStorage.getItem('progresoCuotas');
+                if (progresoGuardado) {
+                    setCuotasPagadasMap(JSON.parse(progresoGuardado));
+                }
+            } catch (error) {
+                console.error("Error al cargar contratos para pagos:", error);
+            }
+        };
+
+        cargarContratos();
     }, []);
 
-    const handlePagarCuota = (contratoId: string) => {
-        const clienteActivo = localStorage.getItem('usuarioActivo') || 'Cliente Particular';
-        const contratosGuardados = localStorage.getItem('misContratos');
-        const listaCompleta: Contrato[] = contratosGuardados ? JSON.parse(contratosGuardados) : [];
+    const handlePagarCuota = (contrato: SolicitudPago, valorCuota: number) => {
+        const clienteActivo = localStorage.getItem('usuarioActivo') || contrato.cliente || 'Cliente Particular';
+        const actuales = cuotasPagadasMap[contrato.id] || 0;
+        const nuevasCuotas = actuales + 1;
 
-        // Actualizar contrato localStorage
-        const contratosActualizados = listaCompleta.map(contrato => {
-            if (contrato.id === contratoId) {
-                const cuotasRealizadas = contrato.cuotasPagadas || 0;
-                const valorCuota = Math.round(contrato.saldo / (contrato.cuotas - cuotasRealizadas));
-                const nuevoSaldo = Math.max(0, contrato.saldo - valorCuota);
-                const nuevasCuotasPagadas = cuotasRealizadas + 1;
+        const nuevoMapa = {
+            ...cuotasPagadasMap,
+            [contrato.id]: nuevasCuotas
+        };
 
-                //  PAGOADMIN del Administrador 
-                const pagosAdminGuardados = localStorage.getItem('pagosAdmin');
-                const listaPagosAdmin = pagosAdminGuardados ? JSON.parse(pagosAdminGuardados) : [];
-                
-                listaPagosAdmin.push({
-                    id: `PAY-${Math.floor(1000 + Math.random() * 9000)}`,
-                    cliente: clienteActivo,
-                    monto: valorCuota,
-                    metodo: `Abono Cuota ${nuevasCuotasPagadas}/${contrato.cuotas} (${contrato.id})`,
-                    estado: 'Pendiente'
-                });
-                localStorage.setItem('pagosAdmin', JSON.stringify(listaPagosAdmin));
+        setCuotasPagadasMap(nuevoMapa);
+        localStorage.setItem('progresoCuotas', JSON.stringify(nuevoMapa));
 
-                return {
-                    ...contrato,
-                    saldo: nuevoSaldo,
-                    cuotasPagadas: nuevasCuotasPagadas
-                };
-            }
-            return contrato;
-        });
-
-        localStorage.setItem('misContratos', JSON.stringify(contratosActualizados));
-
+        // Registrar el comprobante de abono para tesorería
+        const pagosAdminGuardados = localStorage.getItem('pagosAdmin');
+        const listaPagosAdmin = pagosAdminGuardados ? JSON.parse(pagosAdminGuardados) : [];
         
-        setMisContratos(prev => prev.map(c => {
-            if (c.id === contratoId) {
-                const cuotasRealizadas = c.cuotasPagadas || 0;
-                const valorCuota = Math.round(c.saldo / (c.cuotas - cuotasRealizadas));
-                return {
-                    ...c,
-                    saldo: Math.max(0, c.saldo - valorCuota),
-                    cuotasPagadas: cuotasRealizadas + 1
-                };
-            }
-            return c;
-        }));
+        listaPagosAdmin.push({
+            id: `PAY-${Math.floor(1000 + Math.random() * 9000)}`,
+            cliente: clienteActivo,
+            monto: valorCuota,
+            metodo: `Abono Cuota ${nuevasCuotas}/${contrato.cuotasSeleccionadas} (Sol. #${contrato.id})`,
+            estado: 'Pendiente'
+        });
+        localStorage.setItem('pagosAdmin', JSON.stringify(listaPagosAdmin));
 
         alert('¡Pago de cuota enviado con éxito! Ha quedado en estado "Pendiente" para validación de Tesorería.');
+    };
+
+    const formatearFecha = (fechaIso: string) => {
+        if (!fechaIso) return '-';
+        return new Date(fechaIso).toLocaleDateString('es-CL');
     };
 
     return (
@@ -114,9 +102,14 @@ export const UsuarioPago = () => {
                 <div className="row g-4" id="contenedorPagos">
                     {misContratos.length > 0 ? (
                         misContratos.map((contrato) => {
-                            const cuotasRestantes = contrato.cuotas - (contrato.cuotasPagadas || 0);
-                            const valorCuotaMensual = cuotasRestantes > 0 ? Math.round(contrato.saldo / cuotasRestantes) : 0;
-                            const estaAlDia = contrato.saldo === 0;
+                            const esCuotas = contrato.metodoPago === 'Pie y Cuotas';
+                            const saldoInicial = esCuotas ? Math.max(0, contrato.montoTotal - contrato.piePagado) : 0;
+                            const totalCuotas = contrato.cuotasSeleccionadas || 1;
+                            const cuotasRealizadas = cuotasPagadasMap[contrato.id] || 0;
+                            const cuotasRestantes = Math.max(0, totalCuotas - cuotasRealizadas);
+                            const valorCuotaMensual = totalCuotas > 0 ? Math.round(saldoInicial / totalCuotas) : 0;
+                            const saldoActual = cuotasRestantes === 0 ? 0 : Math.max(0, saldoInicial - (valorCuotaMensual * cuotasRealizadas));
+                            const estaAlDia = !esCuotas || saldoActual === 0;
 
                             return (
                                 <div className="col-md-6 col-lg-4" key={contrato.id}>
@@ -131,15 +124,15 @@ export const UsuarioPago = () => {
                                             <h6 className="card-title fw-bold text-secondary mb-1">
                                                 {contrato.tipoServicio} - {contrato.zona}
                                             </h6>
-                                            <p className="text-muted small mb-3">Fecha de contratación: {contrato.fecha}</p>
+                                            <p className="text-muted small mb-3">Fecha de contratación: {formatearFecha(contrato.fechaCreacion)}</p>
 
                                             <div className="bg-light p-3 rounded mb-3 border">
                                                 <div className="d-flex justify-content-between mb-1 small">
                                                     <span className="text-muted">Monto Total:</span>
-                                                    <strong className="text-dark">{contrato.total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</strong>
+                                                    <strong className="text-dark">{contrato.montoTotal.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</strong>
                                                 </div>
 
-                                                {contrato.metodoPago === 'Pie y Cuotas' && (
+                                                {esCuotas && (
                                                     <>
                                                         <div className="d-flex justify-content-between mb-1 small">
                                                             <span className="text-muted">Pie Inicial Abonado:</span>
@@ -147,18 +140,18 @@ export const UsuarioPago = () => {
                                                         </div>
                                                         <div className="d-flex justify-content-between mb-1 small">
                                                             <span className="text-muted">Cuotas Realizadas:</span>
-                                                            <strong className="text-primary">{contrato.cuotasPagadas} de {contrato.cuotas}</strong>
+                                                            <strong className="text-primary">{cuotasRealizadas} de {totalCuotas}</strong>
                                                         </div>
                                                         <hr className="my-2" />
                                                         <div className="d-flex justify-content-between small">
                                                             <span className="fw-bold text-secondary">Saldo Pendiente:</span>
-                                                            <strong className="fw-bold text-danger">{contrato.saldo.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</strong>
+                                                            <strong className="fw-bold text-danger">{saldoActual.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</strong>
                                                         </div>
                                                     </>
                                                 )}
                                             </div>
 
-                                            {contrato.metodoPago === 'Pie y Cuotas' && !estaAlDia && (
+                                            {esCuotas && !estaAlDia && (
                                                 <div className="alert alert-success py-2 px-3 mb-0 small">
                                                     <i className="fa-solid fa-calculator me-2"></i>
                                                     <strong>Valor de la siguiente cuota:</strong> {valorCuotaMensual.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
@@ -167,9 +160,9 @@ export const UsuarioPago = () => {
                                         </div>
 
                                         <div className="card-footer bg-white border-top-0 pb-3 text-end">
-                                            {contrato.metodoPago === 'Pie y Cuotas' && !estaAlDia ? (
+                                            {esCuotas && !estaAlDia ? (
                                                 <button 
-                                                    onClick={() => handlePagarCuota(contrato.id)} 
+                                                    onClick={() => handlePagarCuota(contrato, valorCuotaMensual)} 
                                                     className="btn btn-verde text-white w-100 fw-bold shadow-sm"
                                                 >
                                                     Pagar Cuota ({valorCuotaMensual.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })})

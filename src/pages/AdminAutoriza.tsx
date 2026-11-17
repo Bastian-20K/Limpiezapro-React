@@ -1,96 +1,95 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
+import axios from 'axios';
 
 interface Pago {
     id: string;
     cliente: string;
     monto: number;
     metodo: string;
-    estado: 'Pagado' | 'Pendiente' | 'Rembolsado';
-    motivoReembolso?: string;
-    fechaReembolso?: string;
+    estado: string;
 }
 
 export const AdminAutoriza = () => {
     const navigate = useNavigate();
 
-    // Estados
     const [pagos, setPagos] = useState<Pago[]>([]);
     const [filtro, setFiltro] = useState('Todos');
     
-    // Estados modales
     const [pagoSeleccionado, setPagoSeleccionado] = useState<Pago | null>(null);
     const [motivoReembolso, setMotivoReembolso] = useState('');
 
+    const cargarPagos = async () => {
+        try {
+            const response = await axios.get('http://localhost:8085/api/v1/solicitudes');
+            
+            const solicitudesParaPago = response.data.filter((sol: any) => 
+                sol.estado === 'Terminada' || sol.estado === 'Pagado' || sol.estado === 'Reembolsado'
+            );
+
+            const pagosBackend = solicitudesParaPago.map((sol: any) => ({
+                id: sol.id.toString(),
+                cliente: sol.cliente || 'Cliente Particular',
+                monto: sol.montoTotal || 0,
+                metodo: sol.metodoPago || 'Transferencia/Webpay',
+                estado: sol.estado === 'Terminada' ? 'Pendiente' : sol.estado
+            }));
+            setPagos(pagosBackend);
+        } catch (error) {
+            console.error("Error al cargar pagos", error);
+        }
+    };
     
     useEffect(() => {
-        const pagosGuardados = localStorage.getItem('pagosAdmin');
-        if (pagosGuardados) {
-            setPagos(JSON.parse(pagosGuardados));
-        } else {
-            // DATOS DE PRUEBA
-            const pagosPrueba: Pago[] = [
-                { id: 'PAY-001', cliente: 'Juan Pérez', monto: 45000, metodo: 'Transferencia', estado: 'Pendiente' },
-                { id: 'PAY-002', cliente: 'Empresa Alfa', monto: 120000, metodo: 'Tarjeta de Crédito', estado: 'Pagado' },
-                { id: 'PAY-003', cliente: 'María López', monto: 35000, metodo: 'Webpay', estado: 'Rembolsado', motivoReembolso: 'Cliente canceló el servicio con anticipación.', fechaReembolso: '10-11-2026' }
-            ];
-            setPagos(pagosPrueba);
-            localStorage.setItem('pagosAdmin', JSON.stringify(pagosPrueba));
-        }
+        cargarPagos();
     }, []);
 
-    //guardar pago
-    const actualizarPagos = (nuevosPagos: Pago[]) => {
-        setPagos(nuevosPagos);
-        localStorage.setItem('pagosAdmin', JSON.stringify(nuevosPagos));
-    };
-
-    // pendiente a pagado
-    const handleAutorizar = (id: string) => {
+    const handleAutorizar = async (id: string) => {
         if (window.confirm('¿Confirmas que se recibió el dinero de esta solicitud?')) {
-            const nuevosPagos = pagos.map(pago => 
-                pago.id === id ? { ...pago, estado: 'Pagado' as const } : pago
-            );
-            actualizarPagos(nuevosPagos);
+            try {
+                await axios.put(`http://localhost:8085/api/v1/solicitudes/${id}/estado`, null, {
+                    params: { estado: 'Pagado' }
+                });
+                await cargarPagos();
+            } catch (error) {
+                console.error("Error al autorizar pago", error);
+                alert("Error al actualizar la base de datos.");
+            }
         }
     };
 
-    // reembolso modal
-    const procesarReembolso = (e: React.FormEvent) => {
+    const procesarReembolso = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!pagoSeleccionado || motivoReembolso.trim() === '') return;
 
-        const fechaHoy = new Date().toLocaleDateString('es-CL');
-        const nuevosPagos = pagos.map(pago => 
-            pago.id === pagoSeleccionado.id 
-                ? { ...pago, estado: 'Rembolsado' as const, motivoReembolso: motivoReembolso, fechaReembolso: fechaHoy } 
-                : pago
-        );
-        
-        actualizarPagos(nuevosPagos);
-        setMotivoReembolso('');
-        
-        
-        document.body.classList.remove('modal-open');
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-        document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
-        const modal = document.getElementById('modalReembolso');
-        if (modal) {
-            modal.classList.remove('show');
-            modal.style.display = 'none';
+        try {
+            await axios.put(`http://localhost:8085/api/v1/solicitudes/${pagoSeleccionado.id}/estado`, null, {
+                params: { estado: 'Reembolsado' }
+            });
+            await cargarPagos();
+            
+            setMotivoReembolso('');
+            
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            document.querySelectorAll('.modal-backdrop').forEach(backdrop => backdrop.remove());
+            const modal = document.getElementById('modalReembolso');
+            if (modal) {
+                modal.classList.remove('show');
+                modal.style.display = 'none';
+            }
+        } catch (error) {
+            console.error("Error al procesar reembolso", error);
         }
     };
 
-    
     const pagosFiltrados = pagos.filter(pago => 
         filtro === 'Todos' ? true : pago.estado === filtro
     );
 
     return (
         <div className="bg-light min-vh-100">
-            {/* NAVBAR (Con useNavigate) */}
             <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
                 <div className="container">
                     <span className="navbar-brand fw-bold text-white" style={{ cursor: 'pointer' }} onClick={() => navigate('/admin')}>
@@ -115,7 +114,6 @@ export const AdminAutoriza = () => {
                 <div className="d-flex justify-content-between align-items-center mb-4">
                     <h2 className="fw-bold text-success mb-0">Panel de Autorizaciones y Pagos</h2>
                     
-                    {/* FILTRO DINÁMICO */}
                     <div className="d-flex align-items-center">
                         <label className="fw-bold me-2 text-muted">Filtrar:</label>
                         <select 
@@ -126,12 +124,11 @@ export const AdminAutoriza = () => {
                             <option value="Todos">Todos los Estados</option>
                             <option value="Pagado">Solo Pagados</option>
                             <option value="Pendiente">Solo Pendientes</option>
-                            <option value="Rembolsado">Solo Reembolsados</option>
+                            <option value="Reembolsado">Solo Reembolsados</option>
                         </select>
                     </div>
                 </div>
 
-                {/* TABLA */}
                 <div className="card shadow-sm border-0">
                     <div className="card-body p-0">
                         <div className="table-responsive">
@@ -163,7 +160,6 @@ export const AdminAutoriza = () => {
                                                     </span>
                                                 </td>
                                                 <td className="text-end p-3">
-                                                    {/* Botones dinámicos según el estado */}
                                                     {pago.estado === 'Pendiente' && (
                                                         <button onClick={() => handleAutorizar(pago.id)} className="btn btn-sm btn-outline-success fw-bold">
                                                             Autorizar
@@ -179,14 +175,9 @@ export const AdminAutoriza = () => {
                                                             Reembolsar
                                                         </button>
                                                     )}
-                                                    {pago.estado === 'Rembolsado' && (
-                                                        <button 
-                                                            onClick={() => setPagoSeleccionado(pago)} 
-                                                            className="btn btn-sm btn-secondary fw-bold"
-                                                            data-bs-toggle="modal" 
-                                                            data-bs-target="#modalDetalleReembolso"
-                                                        >
-                                                            Ver Detalle
+                                                    {pago.estado === 'Reembolsado' && (
+                                                        <button className="btn btn-sm btn-secondary fw-bold" disabled>
+                                                            Reembolsado
                                                         </button>
                                                     )}
                                                 </td>
@@ -206,7 +197,6 @@ export const AdminAutoriza = () => {
                 </div>
             </div>
 
-            {/* MODAL REEMBOLSO */}
             <div className="modal fade" id="modalReembolso" tabIndex={-1} aria-hidden="true">
                 <div className="modal-dialog modal-dialog-centered">
                     <div className="modal-content">
@@ -217,7 +207,7 @@ export const AdminAutoriza = () => {
                         <div className="modal-body">
                             <form onSubmit={procesarReembolso}>
                                 <div className="alert alert-warning mb-3">
-                                    <i className="fa-solid fa-circle-exclamation"></i> Estás a punto de reembolsar el dinero de la solicitud <strong>{pagoSeleccionado?.id}</strong>. Esta acción quedará registrada.
+                                    <i className="fa-solid fa-circle-exclamation"></i> Estás a punto de reembolsar el dinero de la solicitud <strong>#{pagoSeleccionado?.id}</strong>.
                                 </div>
                                 <div className="mb-3">
                                     <label className="form-label fw-bold">Motivo del Reembolso</label>
@@ -226,7 +216,7 @@ export const AdminAutoriza = () => {
                                         onChange={(e) => setMotivoReembolso(e.target.value)} 
                                         className="form-control border-danger" 
                                         rows={3} 
-                                        placeholder="Ingresa el motivo detallado (ej: Insatisfacción del cliente, cancelación de servicio, etc.)" 
+                                        placeholder="Ingresa el motivo detallado" 
                                         required
                                     ></textarea>
                                 </div>
@@ -235,30 +225,6 @@ export const AdminAutoriza = () => {
                                     <button type="submit" className="btn btn-danger fw-bold">Confirmar Reembolso</button>
                                 </div>
                             </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* MODAL DETALLE REEMBOLSO */}
-            <div className="modal fade" id="modalDetalleReembolso" tabIndex={-1} aria-hidden="true">
-                <div className="modal-dialog modal-dialog-centered">
-                    <div className="modal-content">
-                        <div className="modal-header bg-secondary text-white">
-                            <h5 className="modal-title fw-bold">Detalle de Reembolso</h5>
-                            <button type="button" className="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div className="modal-body">
-                            <ul className="list-group list-group-flush">
-                                <li className="list-group-item d-flex justify-content-between">
-                                    <span className="text-muted">Fecha del Reembolso:</span>
-                                    <strong>{pagoSeleccionado?.fechaReembolso}</strong>
-                                </li>
-                                <li className="list-group-item">
-                                    <span className="text-muted d-block mb-1">Motivo Registrado:</span>
-                                    <p className="mb-0 fw-bold">{pagoSeleccionado?.motivoReembolso}</p>
-                                </li>
-                            </ul>
                         </div>
                     </div>
                 </div>

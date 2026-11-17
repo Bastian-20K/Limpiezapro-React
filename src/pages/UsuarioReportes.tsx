@@ -1,39 +1,59 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiOperacion } from '../services/api';
 
-interface Contrato {
-    id: string;
-    fecha: string;
-    cliente?: string;
-    tipoServicio: string;
+interface DetalleArea {
+    nombreArea: string;
+    cantidad: number;
+    subtotal: number;
+}
+
+interface SolicitudReporte {
+    id: number;
+    cliente: string;
     zona: string;
-    total: number;
-    metodoPago: 'Total' | 'Pie y Cuotas';
-    cuotas: number;
+    tipoServicio: string;
+    metodoPago: string;
+    cuotasSeleccionadas: number;
+    montoTotal: number;
     piePagado: number;
-    saldo: number;
     estado: string;
+    fechaCreacion: string;
+    detallesAreas: DetalleArea[];
 }
 
 export const UsuarioReportes = () => {
     const navigate = useNavigate();
-    const [misReportes, setMisReportes] = useState<Contrato[]>([]);
-    const [contratoSeleccionado, setContratoSeleccionado] = useState<Contrato | null>(null);
+    const [misReportes, setMisReportes] = useState<SolicitudReporte[]>([]);
+    const [contratoSeleccionado, setContratoSeleccionado] = useState<SolicitudReporte | null>(null);
 
     useEffect(() => {
-        const clienteActivo = (localStorage.getItem('usuarioActivo') || '').toLowerCase();
-        const contratosGuardados = localStorage.getItem('misContratos');
+        const cargarReportes = async () => {
+            try {
+                const clienteActivo = (localStorage.getItem('usuarioActivo') || '').toLowerCase();
+                const response = await apiOperacion.get('/solicitudes');
+                const lista: SolicitudReporte[] = response.data;
 
-        if (contratosGuardados) {
-            const lista: Contrato[] = JSON.parse(contratosGuardados);
-            
-            const reportesDelUsuario = lista.filter(c => !c.cliente || c.cliente.toLowerCase() === clienteActivo);
-            setMisReportes(reportesDelUsuario);
-        }
+                const reportesDelUsuario = clienteActivo
+                    ? lista.filter(c => c.cliente && c.cliente.toLowerCase() === clienteActivo)
+                    : lista;
+
+                setMisReportes(reportesDelUsuario);
+            } catch (error) {
+                console.error("Error al cargar reportes:", error);
+            }
+        };
+
+        cargarReportes();
     }, []);
 
-    const abrirComprobante = (contrato: Contrato) => {
+    const abrirComprobante = (contrato: SolicitudReporte) => {
         setContratoSeleccionado(contrato);
+    };
+
+    const formatearFecha = (fechaIso: string) => {
+        if (!fechaIso) return '-';
+        return new Date(fechaIso).toLocaleDateString('es-CL');
     };
 
     return (
@@ -52,7 +72,7 @@ export const UsuarioReportes = () => {
                 </div>
             </nav>
 
-            {/*  PRINCIPAL */}
+            {/* PRINCIPAL */}
             <div className="container py-5">
                 <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
                     <h2 className="color-cian fw-bold mb-0">
@@ -83,20 +103,21 @@ export const UsuarioReportes = () => {
                                         misReportes.map((item) => (
                                             <tr key={item.id}>
                                                 <td className="px-4 py-3 fw-bold text-primary">#{item.id}</td>
-                                                <td>{item.fecha}</td>
+                                                <td>{formatearFecha(item.fechaCreacion)}</td>
                                                 <td>
                                                     <div className="fw-bold text-secondary">{item.tipoServicio}</div>
                                                     <small className="text-muted">{item.zona}</small>
                                                 </td>
                                                 <td className="fw-bold text-success">
-                                                    {item.total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                    {item.montoTotal.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                                 </td>
                                                 <td>
                                                     <span className={`badge ${
                                                         item.estado === 'Terminada' ? 'bg-success' :
-                                                        item.estado === 'En marcha' ? 'bg-info text-dark' : 'bg-warning text-dark'
+                                                        item.estado === 'En marcha' ? 'bg-info text-dark' :
+                                                        item.estado === 'Rechazada' ? 'bg-danger' : 'bg-warning text-dark'
                                                     }`}>
-                                                        {item.estado || 'En validación'}
+                                                        {item.estado || 'En proceso de validación'}
                                                     </span>
                                                 </td>
                                                 <td className="px-4 py-3 text-end no-print">
@@ -149,7 +170,7 @@ export const UsuarioReportes = () => {
                                         </li>
                                         <li className="list-group-item d-flex justify-content-between px-0">
                                             <span className="text-muted">Fecha:</span>
-                                            <span>{contratoSeleccionado.fecha}</span>
+                                            <span>{formatearFecha(contratoSeleccionado.fechaCreacion)}</span>
                                         </li>
                                         <li className="list-group-item d-flex justify-content-between px-0">
                                             <span className="text-muted">Servicio / Zona:</span>
@@ -157,17 +178,20 @@ export const UsuarioReportes = () => {
                                         </li>
                                         <li className="list-group-item d-flex justify-content-between px-0">
                                             <span className="text-muted">Modalidad de Pago:</span>
-                                            <span>{contratoSeleccionado.metodoPago}</span>
+                                            <span>
+                                                {contratoSeleccionado.metodoPago}
+                                                {contratoSeleccionado.metodoPago === 'Pie y Cuotas' ? ` (${contratoSeleccionado.cuotasSeleccionadas} cuotas)` : ''}
+                                            </span>
                                         </li>
                                         <li className="list-group-item d-flex justify-content-between px-0 bg-light p-2 mt-2 rounded">
                                             <span className="fw-bold">Total del Servicio:</span>
                                             <strong className="text-success fs-5">
-                                                {contratoSeleccionado.total.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                                                {contratoSeleccionado.montoTotal.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
                                             </strong>
                                         </li>
                                     </ul>
                                     <div className="alert alert-info py-2 text-center small mb-0">
-                                        Estado actual: <strong>{contratoSeleccionado.estado || 'En validación'}</strong>
+                                        Estado actual: <strong>{contratoSeleccionado.estado}</strong>
                                     </div>
                                 </div>
                             ) : (

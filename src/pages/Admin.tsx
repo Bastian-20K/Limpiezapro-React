@@ -1,23 +1,34 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export const Admin = () => {
     const navigate = useNavigate();
     
-    // Estado
-    const [totalUsuarios, setTotalUsuarios] = useState(0);
-
+    // Estados del Dashboard conectados a la BD
+    const [totalSolicitudes, setTotalSolicitudes] = useState(0);
+    const [totalEmpleados, setTotalEmpleados] = useState(0);
     
+    const cargarEstadisticas = async () => {
+        try {
+            // Puerto 8085 y ruta /api/v1/solicitudes
+            const resSolicitudes = await axios.get('http://localhost:8085/api/v1/solicitudes');
+            setTotalSolicitudes(resSolicitudes.data.length);
+
+            // Puerto 8085 y ruta /api/v1/empleados
+            const resEmpleados = await axios.get('http://localhost:8085/api/v1/empleados');
+            setTotalEmpleados(resEmpleados.data.length);
+        } catch (error) {
+            console.error("Error al cargar estadísticas", error);
+        }
+    };
+
     useEffect(() => {
-        const claves = Object.keys(localStorage);
-        // con @
-        const correosRegistrados = claves.filter(clave => clave.includes('@'));
-        setTotalUsuarios(correosRegistrados.length);
+        cargarEstadisticas();
     }, []);
 
-    
     const handleLogout = () => {
-        
+        // Aquí a futuro limpiaremos el token JWT
         navigate('/');
     };
 
@@ -54,11 +65,15 @@ export const Admin = () => {
                         <h1 className="display-5 fw-bold shadow-text"><i className="fa-solid fa-hand-sparkles me-3"></i>Bienvenido al Portal Admin</h1>
                         <p className="col-md-8 fs-5 mt-3">Panel central de administración de <strong>LimpiezaPro</strong>. Desde aquí podrás gestionar a tu personal, autorizar pagos, asignar servicios y visualizar los ingresos en tiempo real.</p>
                         
-                        {/* Insignia dinámica que lee los datos del estado */}
-                        <div className="mt-4">
+                        {/* Insignias dinámicas que leen los datos del backend */}
+                        <div className="mt-4 d-flex gap-3 flex-wrap">
                             <span className="badge bg-light text-dark fs-6 p-2 rounded-pill shadow-sm">
-                                <i className="fa-solid fa-users me-2 text-primary"></i>
-                                Cuentas registradas en el sistema: <span className="fw-bold text-success">{totalUsuarios}</span>
+                                <i className="fa-solid fa-list-check me-2 text-primary"></i>
+                                Solicitudes Totales: <span className="fw-bold text-primary">{totalSolicitudes}</span>
+                            </span>
+                            <span className="badge bg-light text-dark fs-6 p-2 rounded-pill shadow-sm">
+                                <i className="fa-solid fa-users-gear me-2 text-success"></i>
+                                Empleados en Sistema: <span className="fw-bold text-success">{totalEmpleados}</span>
                             </span>
                         </div>
                     </div>
